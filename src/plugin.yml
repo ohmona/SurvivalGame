@@ -1,0 +1,6 @@
+main: com.ohmona.survival.Main
+version: 1.0.0
+name: SurvivalGame
+api-version: 1.13
+commands:
+  game:
