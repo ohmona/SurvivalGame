@@ -3,7 +3,9 @@ package com.ohmona.survival;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.CommandBlock;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,12 +25,31 @@ public class Main extends JavaPlugin implements CommandExecutor, Listener {
     //Objective obj = board.registerNewObjective("members", "dummy", "members");
     //org.bukkit.scoreboard.Team member = board.registerNewTeam("members");
     //org.bukkit.scoreboard.Team spectator = board.registerNewTeam("spectator");
+    World w;
+    World w2;
+    World w3;
+    WorldBorder border1 = w.getWorldBorder();
+    WorldBorder border2 = w2.getWorldBorder();
+    WorldBorder border3 = w3.getWorldBorder();
 
     //
     // Main
     //
     @Override
     public void onEnable() {
+
+        for(int i = 0; i < 3; i++) {
+            if(Bukkit.getWorlds().get(i).getName().endsWith("world")) {
+                w = Bukkit.getWorlds().get(i);
+            }
+            else if(Bukkit.getWorlds().get(i).getName().endsWith("_nether")) {
+                w2 = Bukkit.getWorlds().get(i);
+            }
+            else if(Bukkit.getWorlds().get(i).getName().endsWith("_the_end")) {
+                w3 = Bukkit.getWorlds().get(i);
+            }
+        }
+
         Bukkit.getConsoleSender().sendMessage("plugin enable");
 
         getServer().getPluginManager().registerEvents(this,this);
@@ -153,6 +174,10 @@ public class Main extends JavaPlugin implements CommandExecutor, Listener {
     }
 
     public void beginTimer() {
+        //
+        //  begin game timer
+        //
+        beginGameTimer();
         int timer = Bukkit.getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
             @Override
             public void run() {
@@ -181,6 +206,48 @@ public class Main extends JavaPlugin implements CommandExecutor, Listener {
     }
 
     //
+    //  gamerule
+    //
+    public void beginGameTimer() {
+        Bukkit.getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+            @Override
+            public void run() {
+                if(isTimerUpOrDown == 0) {
+                    if (isGameBegan()) {
+                        border1.setCenter(0, 0);
+                        border2.setCenter(0, 0);
+                        border3.setCenter(0, 0);
+                        border1.setSize(2000);
+                        border2.setSize(2000);
+                        border3.setSize(2000);
+                        for (Player players : Bukkit.getServer().getOnlinePlayers()) {
+                            players.teleport(new Location(w, 0, w.getHighestBlockYAt(0, 0), 0));
+                        }
+                    }
+                    if (isTime(10, 0)) {
+                        for (Player players : Bukkit.getServer().getOnlinePlayers()) {
+                            players.sendTitle("", "warning", 20, 60, 60);
+                            if (players.getWorld().getName().endsWith("_nether") || players.getWorld().getName().endsWith("_end")) {
+                                players.teleport(new Location(w, 0, w.getHighestBlockYAt(0, 0), 0));
+                                players.sendMessage("you are teleported because of different dimension");
+                            }
+                        }
+                        border1.setSize(10, 240);
+                    }
+                    if (isTime(15, 0)) {
+                        stopTimer();
+                    }
+                }
+                else {
+                    Bukkit.broadcastMessage("please restart the timer");
+                    Bukkit.broadcastMessage("and use /game start up");
+                    stopTimer();
+                }
+            }
+        }, 0 , 1L);
+    }
+
+    //
     // useful methods
     //
     public String getTime(int time) {
@@ -189,6 +256,28 @@ public class Main extends JavaPlugin implements CommandExecutor, Listener {
 
         return min + " : " + sec;
     }
+    public boolean isTime(int min, int sec) {
+        int times = min * 60 + sec + 1;
+        if(time_second == times) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    public boolean isGameBegan() {
+        if(isTime(0,0)) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    public void stopTimer() {
+        isTimerRunning = false;
+        resetTime();
+    }
+
     public void resetTime() {
         time_second = 0;
     }
